@@ -5,7 +5,7 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.guidedmeditationtreks.binaural"
+        applicationId "social.kosta.binaural"
         minSdk 21
         targetSdk 36
     }
