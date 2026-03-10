@@ -1,0 +1,27 @@
+# Detekt config (builds upon default)
+# https://detekt.dev/docs/introduction/configurations
+
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+complexity:
+  LongMethod:
+    threshold: 260
+  LongParameterList:
+    functionThreshold: 6
+    constructorThreshold: 6
+  CyclomaticComplexMethod:
+    threshold: 60
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+
+style:
+  MaxLineLength:
+    maxLineLength: 200
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 5

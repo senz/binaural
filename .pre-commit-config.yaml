@@ -1,0 +1,38 @@
+# Pre-commit hooks for BinauralBeatsExample (Android/Kotlin)
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+default_language_version:
+  python: python3
+
+repos:
+  # Generic file fixes
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Kotlin: ktlint + detekt via Gradle (single source of truth)
+  # Перед первым коммитом выполните: ./gradlew ktlintFormat
+  - repo: local
+    hooks:
+      - id: ktlint-check
+        name: ktlint (Kotlin style)
+        entry: ./gradlew ktlintCheck
+        language: system
+        types: [kotlin]
+      - id: detekt
+        name: detekt (Kotlin static analysis)
+        entry: ./gradlew detekt
+        language: system
+        types: [kotlin]

@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 class MainActivity : ComponentActivity() {
-
     private var wave: BeatsEngine? = null
     private var isPlaying by mutableStateOf(false)
         private set
@@ -19,17 +18,22 @@ class MainActivity : ComponentActivity() {
             BinauralTheme {
                 BinauralScreen(
                     isPlaying = isPlaying,
-                    onPlayRequested = { carrier: Float, beat: Float, isBinaural: Boolean ->
+                    onPlayRequested = { carrier: Float, beat: Float, isBinaural: Boolean, timerMinutes: Int? ->
                         CountdownHelper.getInstance().cancelCountdown(this)
                         wave?.release()
-                        wave = if (isBinaural) {
-                            Binaural(carrier, beat)
-                        } else {
-                            Isochronic(carrier, beat)
-                        }
+                        wave =
+                            if (isBinaural) {
+                                Binaural(carrier, beat)
+                            } else {
+                                Isochronic(carrier, beat)
+                            }
                         if (!wave!!.getIsPlaying()) {
                             wave!!.start()
                             isPlaying = true
+                            if (timerMinutes != null && timerMinutes > 0) {
+                                val endTime = System.currentTimeMillis() + timerMinutes * 60_000L
+                                CountdownHelper.getInstance().startCountdown(wave!!, endTime, this)
+                            }
                         }
                     },
                     onStopRequested = {
@@ -37,19 +41,24 @@ class MainActivity : ComponentActivity() {
                         wave?.stop()
                         isPlaying = false
                     },
-                    onRefreshAndRestart = { carrier: Float, beat: Float, isBinaural: Boolean ->
+                    onRefreshAndRestart = { carrier: Float, beat: Float, isBinaural: Boolean, timerMinutes: Int? ->
                         if (!isPlaying) return@BinauralScreen
                         CountdownHelper.getInstance().cancelCountdown(this)
                         wave?.release()
-                        wave = if (isBinaural) {
-                            Binaural(carrier, beat)
-                        } else {
-                            Isochronic(carrier, beat)
-                        }
+                        wave =
+                            if (isBinaural) {
+                                Binaural(carrier, beat)
+                            } else {
+                                Isochronic(carrier, beat)
+                            }
                         if (!wave!!.getIsPlaying()) {
                             wave!!.start()
+                            if (timerMinutes != null && timerMinutes > 0) {
+                                val endTime = System.currentTimeMillis() + timerMinutes * 60_000L
+                                CountdownHelper.getInstance().startCountdown(wave!!, endTime, this)
+                            }
                         }
-                    }
+                    },
                 )
             }
         }
