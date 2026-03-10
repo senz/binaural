@@ -1,7 +1,7 @@
 package com.guidedmeditationtreks.binaural;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
 
 public class Isochronic implements BeatsEngine {
@@ -28,9 +28,19 @@ public class Isochronic implements BeatsEngine {
 		sampleCount = multiplier * 2;
 		int buffSize = sampleCount * 2;
 
-		mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-				AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
-				buffSize, AudioTrack.MODE_STATIC);
+		mAudio = new AudioTrack.Builder()
+				.setAudioAttributes(new AudioAttributes.Builder()
+						.setUsage(AudioAttributes.USAGE_MEDIA)
+						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+						.build())
+				.setAudioFormat(new AudioFormat.Builder()
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setSampleRate(SAMPLE_RATE)
+						.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+						.build())
+				.setBufferSizeInBytes(buffSize)
+				.setTransferMode(AudioTrack.MODE_STATIC)
+				.build();
 
 		short samples[] = new short[sampleCount];
 		int amplitude = 0;
@@ -71,7 +81,7 @@ public class Isochronic implements BeatsEngine {
 			phase += twopi * frequency / SAMPLE_RATE;
 		}
 		mAudio.write(samples, 0, sampleCount);
-		mAudio.setStereoVolume(0.0f, 0.0f);
+		mAudio.setVolume(0f);
 		Helpers.napThread();
 	}
 
@@ -86,12 +96,12 @@ public class Isochronic implements BeatsEngine {
 		isPlaying = true;
 		mAudio.play();
 		Helpers.napThread();
-		mAudio.setStereoVolume(1f, 1f);
+		mAudio.setVolume(1f);
 	}
 
 	public void stop() {
 
-		mAudio.setStereoVolume(0.0f, 0.0f);
+		mAudio.setVolume(0f);
 		Helpers.napThread();
 		mAudio.stop();
 		isPlaying = false;

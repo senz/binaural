@@ -1,7 +1,7 @@
 package com.guidedmeditationtreks.binaural;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
 
 public class PlayWave {
@@ -14,9 +14,19 @@ public class PlayWave {
 
 	public PlayWave() {
 
-		mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-				AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
-				buffsize, AudioTrack.MODE_STATIC);
+		mAudio = new AudioTrack.Builder()
+				.setAudioAttributes(new AudioAttributes.Builder()
+						.setUsage(AudioAttributes.USAGE_MEDIA)
+						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+						.build())
+				.setAudioFormat(new AudioFormat.Builder()
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setSampleRate(SAMPLE_RATE)
+						.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+						.build())
+				.setBufferSizeInBytes(buffsize)
+				.setTransferMode(AudioTrack.MODE_STATIC)
+				.build();
 	}
 
 	public void setWave(int frequency) {
