@@ -11,6 +11,8 @@ class MainActivity : ComponentActivity() {
     private var wave: BeatsEngine? = null
     private var isPlaying by mutableStateOf(false)
         private set
+    private var timerEndTimeMillis by mutableStateOf(0L)
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,6 +20,7 @@ class MainActivity : ComponentActivity() {
             BinauralTheme {
                 BinauralScreen(
                     isPlaying = isPlaying,
+                    timerEndTimeMillis = timerEndTimeMillis,
                     onPlayRequested = { carrier: Float, beat: Float, isBinaural: Boolean, timerMinutes: Int? ->
                         CountdownHelper.getInstance().cancelCountdown(this)
                         wave?.release()
@@ -32,12 +35,16 @@ class MainActivity : ComponentActivity() {
                             isPlaying = true
                             if (timerMinutes != null && timerMinutes > 0) {
                                 val endTime = System.currentTimeMillis() + timerMinutes * 60_000L
+                                timerEndTimeMillis = endTime
                                 CountdownHelper.getInstance().startCountdown(wave!!, endTime, this)
+                            } else {
+                                timerEndTimeMillis = 0L
                             }
                         }
                     },
                     onStopRequested = {
                         CountdownHelper.getInstance().cancelCountdown(this)
+                        timerEndTimeMillis = 0L
                         wave?.stop()
                         isPlaying = false
                     },
@@ -55,7 +62,10 @@ class MainActivity : ComponentActivity() {
                             wave!!.start()
                             if (timerMinutes != null && timerMinutes > 0) {
                                 val endTime = System.currentTimeMillis() + timerMinutes * 60_000L
+                                timerEndTimeMillis = endTime
                                 CountdownHelper.getInstance().startCountdown(wave!!, endTime, this)
+                            } else {
+                                timerEndTimeMillis = 0L
                             }
                         }
                     },
@@ -68,10 +78,12 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (CountdownHelper.getInstance().hasCountdownEnded()) {
             CountdownHelper.getInstance().stopFromAlarm()
+            timerEndTimeMillis = 0L
             wave?.stop()
             isPlaying = false
         } else if (isPlaying && wave != null && !wave!!.getIsPlaying()) {
             CountdownHelper.getInstance().cancelCountdown(this)
+            timerEndTimeMillis = 0L
             isPlaying = false
         }
     }

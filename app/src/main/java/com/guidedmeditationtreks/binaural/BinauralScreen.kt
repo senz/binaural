@@ -30,10 +30,12 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun BinauralScreen(
     isPlaying: Boolean,
+    timerEndTimeMillis: Long,
     onPlayRequested: (carrierHz: Float, beatHz: Float, isBinaural: Boolean, timerMinutes: Int?) -> Unit,
     onStopRequested: () -> Unit,
     onRefreshAndRestart: (carrierHz: Float, beatHz: Float, isBinaural: Boolean, timerMinutes: Int?) -> Unit,
@@ -79,6 +82,19 @@ fun BinauralScreen(
     var carrierError by remember { mutableStateOf<String?>(null) }
     var beatError by remember { mutableStateOf<String?>(null) }
     var isDataChanged by remember { mutableStateOf(true) }
+    var remainingSeconds by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(timerEndTimeMillis, isPlaying) {
+        if (timerEndTimeMillis <= 0L || !isPlaying) {
+            remainingSeconds = 0L
+            return@LaunchedEffect
+        }
+        while (true) {
+            val remaining = (timerEndTimeMillis - System.currentTimeMillis()) / 1000
+            remainingSeconds = maxOf(0L, remaining)
+            delay(1000)
+        }
+    }
 
     fun validateCarrier(): Boolean {
         if (carrierText.isBlank()) {
@@ -259,6 +275,33 @@ fun BinauralScreen(
                         )
                     }
                 }
+            }
+
+            // Status / remaining time
+            val statusText =
+                when {
+                    timerEndTimeMillis > 0L && isPlaying && remainingSeconds > 0 -> {
+                        val min = (remainingSeconds / 60).toInt()
+                        val sec = (remainingSeconds % 60).toInt()
+                        stringResource(R.string.status_remaining, min, sec)
+                    }
+                    isPlaying -> stringResource(R.string.status_playing)
+                    else -> stringResource(R.string.status_stopped)
+                }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.status_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color(0xFFB0B0B0),
+                )
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = labelColor,
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
