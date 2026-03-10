@@ -1,0 +1,33 @@
+{
+  "name": "Android (Kotlin + Jetpack Compose)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mathiasfrohlich.kotlin",
+        "fwcd.kotlin",
+        "vscjava.vscode-gradle",
+        "adelphes.android-dev-ext"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/java-17-openjdk-amd64",
+            "default": true
+          }
+        ],
+        "java.jdt.ls.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
+      }
+    }
+  },
+  "remoteEnv": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
+  },
+  "postCreateCommand": "echo 'Android SDK:' && (sdkmanager --sdk_root=/opt/android-sdk --list 2>/dev/null | head -5 || true) && echo 'Java:' && java -version 2>&1",
+  "runArgs": []
+}
