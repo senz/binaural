@@ -1,0 +1,30 @@
+# Local SDK path (do not commit)
+local.properties
+
+# Build outputs
+build/
+*.apk
+*.aab
+*.ap_
+*.dex
+output/
+
+# Gradle
+.gradle/
+**/gradle-app.setting
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+.cache/
