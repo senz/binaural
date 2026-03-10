@@ -22,6 +22,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
@@ -44,6 +45,27 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+
+private data class BinauralPreset(
+    val nameResId: Int,
+    val carrierHz: Float,
+    val beatHz: Float,
+)
+
+private fun formatHz(value: Float): String = if (value == value.toLong().toFloat()) value.toLong().toString() else value.toString()
+
+private val BINAURAL_PRESETS =
+    listOf(
+        BinauralPreset(R.string.preset_focus, 225f, 16f),
+        BinauralPreset(R.string.preset_euphoria, 250f, 8.5f),
+        BinauralPreset(R.string.preset_relaxation, 225f, 9f),
+        BinauralPreset(R.string.preset_deep_sleep, 150f, 2.5f),
+        BinauralPreset(R.string.preset_meditation, 225f, 6f),
+        BinauralPreset(R.string.preset_creativity, 225f, 6.5f),
+        BinauralPreset(R.string.preset_energy, 225f, 21f),
+        BinauralPreset(R.string.preset_power_nap, 175f, 5f),
+        BinauralPreset(R.string.preset_40hz_gamma, 225f, 40f),
+    )
 
 @Composable
 fun BinauralScreen(
@@ -69,10 +91,10 @@ fun BinauralScreen(
             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
         )
 
-    var carrierText by remember { mutableStateOf("200") }
-    var beatText by remember { mutableStateOf("8") }
+    var carrierText by remember { mutableStateOf("225") }
+    var beatText by remember { mutableStateOf("40") }
     var isBinaural by remember { mutableStateOf(true) }
-    var timerMinutes by remember { mutableStateOf<Int?>(null) } // null = no timer, 5, 10, 15
+    var timerMinutes by remember { mutableStateOf<Int?>(5) } // null = no timer, 5, 10, 15; default 5 min
     var timerDropdownExpanded by remember { mutableStateOf(false) }
     var carrierError by remember { mutableStateOf<String?>(null) }
     var beatError by remember { mutableStateOf<String?>(null) }
@@ -164,7 +186,7 @@ fun BinauralScreen(
                     .fillMaxSize()
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -226,7 +248,10 @@ fun BinauralScreen(
                 verticalAlignment = Alignment.Top,
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(0.4f),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(0.4f)
+                            .alpha(if (isPlaying) 0.5f else 1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     OutlinedTextField(
@@ -241,6 +266,7 @@ fun BinauralScreen(
                         label = { Text(stringResource(R.string.carrier_label)) },
                         placeholder = { Text(stringResource(R.string.carrier_hint)) },
                         singleLine = true,
+                        readOnly = isPlaying,
                         isError = carrierError != null,
                         supportingText =
                             if (carrierError != null) {
@@ -302,7 +328,10 @@ fun BinauralScreen(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth(0.4f),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(0.4f)
+                            .alpha(if (isPlaying) 0.5f else 1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     OutlinedTextField(
@@ -317,6 +346,7 @@ fun BinauralScreen(
                         label = { Text(stringResource(R.string.beat_label)) },
                         placeholder = { Text(stringResource(R.string.beat_hint)) },
                         singleLine = true,
+                        readOnly = isPlaying,
                         isError = beatError != null,
                         supportingText =
                             if (beatError != null) {
@@ -341,6 +371,25 @@ fun BinauralScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            BinauralPresetsSection(
+                presets = BINAURAL_PRESETS,
+                labelColor = labelColor,
+                onPresetClick = { preset ->
+                    carrierText = formatHz(preset.carrierHz)
+                    beatText = formatHz(preset.beatHz)
+                    carrierError = null
+                    beatError = null
+                    focusManager.clearFocus()
+                    timerDropdownExpanded = false
+                    onPlayRequested(preset.carrierHz, preset.beatHz, isBinaural, timerMinutes)
+                    isDataChanged = false
+                },
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
         }
 
         Text(
@@ -353,6 +402,57 @@ fun BinauralScreen(
                     .padding(horizontal = 16.dp, vertical = 20.dp)
                     .padding(bottom = 32.dp),
         )
+    }
+}
+
+@Composable
+private fun BinauralPresetsSection(
+    presets: List<BinauralPreset>,
+    labelColor: Color,
+    onPresetClick: (BinauralPreset) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.presets_label),
+            style = MaterialTheme.typography.labelMedium,
+            color = Color(0xFFB0B0B0),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            presets.chunked(3).forEach { rowPresets ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    rowPresets.forEach { preset ->
+                        OutlinedButton(
+                            onClick = { onPresetClick(preset) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                text = stringResource(preset.nameResId),
+                                color = labelColor,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                    if (rowPresets.size < 3) {
+                        repeat(3 - rowPresets.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

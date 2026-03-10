@@ -22,4 +22,15 @@
     <string name="status_stopped">Stopped</string>
     <string name="status_remaining">Remaining: %1$d:%2$02d</string>
 
+    <string name="presets_label">Presets</string>
+    <string name="preset_focus">Focus</string>
+    <string name="preset_euphoria">Euphoria</string>
+    <string name="preset_relaxation">Relaxation</string>
+    <string name="preset_deep_sleep">Deep Sleep</string>
+    <string name="preset_meditation">Meditation</string>
+    <string name="preset_creativity">Creativity</string>
+    <string name="preset_energy">Energy</string>
+    <string name="preset_power_nap">Power Nap</string>
+    <string name="preset_40hz_gamma">40 Hz Gamma</string>
+
 </resources>
