@@ -4,9 +4,6 @@
 
 This app uses the core of the "Binaural" application, created by Russell Dobda in 2016
 
-Some background on the algorithms can be found here
-http://www.gunkyfunky.com/blog/open-source-binaural-beats
-
 ---
 
 ## Development
