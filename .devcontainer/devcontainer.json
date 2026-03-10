@@ -34,6 +34,6 @@
     "ANDROID_HOME": "/opt/android-sdk",
     "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
   },
-  "postCreateCommand": "echo 'Android SDK:' && (sdkmanager --sdk_root=/opt/android-sdk --list 2>/dev/null | head -5 || true) && echo 'Java:' && java -version 2>&1",
+  "postCreateCommand": "echo 'Android SDK:' && (sdkmanager --sdk_root=/opt/android-sdk --list 2>/dev/null | head -5 || true) && echo 'Java:' && java -version 2>&1 && (pre-commit install || true) && echo 'Pre-commit hook installed.'",
   "runArgs": []
 }

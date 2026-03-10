@@ -11,12 +11,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV ANDROID_HOME=/opt/android-sdk
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
-# System packages: JDK 17, tools for SDK install, git (adb comes from SDK platform-tools)
+# System packages: JDK 17, tools for SDK install, git, Python for pre-commit
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jdk \
     unzip \
     wget \
     git \
+    python3 \
+    python3-pip \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Android command-line tools: download and install to $ANDROID_HOME/cmdline-tools/latest
@@ -56,5 +59,9 @@ RUN groupadd --gid ${DEV_GID} ${DEV_USER} \
 # SDK must be writable so Gradle can install components (e.g. new platforms)
 RUN chown -R ${DEV_USER}:${DEV_USER} ${ANDROID_HOME}
 
+# Pre-commit: install for dev user (hooks run in repo, need git + Gradle)
+ENV PATH="/home/${DEV_USER}/.local/bin:${PATH}"
 USER ${DEV_USER}
+RUN pip3 install --user pre-commit
+
 WORKDIR /workspace
