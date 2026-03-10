@@ -6,13 +6,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.PlayArrow
@@ -184,45 +189,12 @@ fun BinauralScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                RadioButton(
-                    selected = isBinaural,
-                    onClick = {
-                        isBinaural = true
-                        isDataChanged = true
-                    },
-                )
-                Text(
-                    stringResource(R.string.binaural_radio),
-                    color = labelColor,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                RadioButton(
-                    selected = !isBinaural,
-                    onClick = {
-                        if (!isBinaural) return@RadioButton
-                        isBinaural = false
-                        val b = beatText.toFloatOrNull()
-                        if (b != null && b < 0.5f) beatText = "0.5"
-                        isDataChanged = true
-                    },
-                )
-                Text(
-                    stringResource(R.string.isochronic_radio),
-                    color = labelColor,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             BinauralTimerSection(
                 state = TimerSectionState(timerMinutes, timerDropdownExpanded, isPlaying),
                 onTimerMinutesChange = {
@@ -238,6 +210,22 @@ fun BinauralScreen(
                 isPlaying = isPlaying,
                 timerEndTimeMillis = timerEndTimeMillis,
                 labelColor = labelColor,
+            )
+
+            BinauralIsochronicSelector(
+                isBinaural = isBinaural,
+                isPlaying = isPlaying,
+                labelColor = labelColor,
+                onBinauralSelected = {
+                    isBinaural = true
+                    isDataChanged = true
+                },
+                onIsochronicSelected = {
+                    isBinaural = false
+                    val b = beatText.toFloatOrNull()
+                    if (b != null && b < 0.5f) beatText = "0.5"
+                    isDataChanged = true
+                },
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -401,6 +389,61 @@ fun BinauralScreen(
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp, vertical = 20.dp)
                     .padding(bottom = 32.dp),
+        )
+    }
+}
+
+@Composable
+private fun BinauralIsochronicSelector(
+    isBinaural: Boolean,
+    isPlaying: Boolean,
+    labelColor: Color,
+    onBinauralSelected: () -> Unit,
+    onIsochronicSelected: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .alpha(if (isPlaying) 0.5f else 1f),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        RadioButton(
+            selected = isBinaural,
+            onClick = {
+                if (isPlaying) return@RadioButton
+                onBinauralSelected()
+            },
+            enabled = !isPlaying,
+        )
+        Text(
+            stringResource(R.string.binaural_radio),
+            color = labelColor,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.clickable(enabled = !isPlaying) {
+                    onBinauralSelected()
+                },
+        )
+        Spacer(modifier = Modifier.widthIn(min = 24.dp))
+        RadioButton(
+            selected = !isBinaural,
+            onClick = {
+                if (isPlaying) return@RadioButton
+                if (!isBinaural) return@RadioButton
+                onIsochronicSelected()
+            },
+            enabled = !isPlaying,
+        )
+        Text(
+            stringResource(R.string.isochronic_radio),
+            color = labelColor,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.clickable(enabled = !isPlaying) {
+                    onIsochronicSelected()
+                },
         )
     }
 }
