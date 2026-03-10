@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.guidedmeditationtreks.binaural'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.guidedmeditationtreks.binaural"
         minSdk 21
-        targetSdk 34
+        targetSdk 36
     }
 
     buildTypes {

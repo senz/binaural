@@ -2,8 +2,14 @@
   "name": "Android (Kotlin + Jetpack Compose)",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "..",
+    "args": {
+      "DEV_USER": "developer",
+      "DEV_UID": "1000",
+      "DEV_GID": "1000"
+    }
   },
+  "remoteUser": "developer",
   "customizations": {
     "vscode": {
       "extensions": [
