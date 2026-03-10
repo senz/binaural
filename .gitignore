@@ -25,6 +25,7 @@ Thumbs.db
 
 # Logs and temp
 *.log
+log.txt
 *.tmp
 *.temp
 .cache/
