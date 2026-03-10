@@ -168,10 +168,12 @@ public class MainActivity extends Activity {
 			if (isDataChanged) {
 				refresh();
 			}
-			//wave.start();
 			attemptStartWave();
 		} else {
-			wave.stop();
+			CountdownHelper.getInstance().cancelCountdown(this);
+			if (wave != null) {
+				wave.stop();
+			}
 		}
 	}
 
@@ -189,16 +191,42 @@ public class MainActivity extends Activity {
 
 	public void runCountdown(View v) {
 		int countdownLength = Integer.parseInt((String)v.getTag()) * 1000 * 60;
+		long endTimeMillis = System.currentTimeMillis() + countdownLength;
 
-		if (!startStop.isActivated())
-		{
+		if (!startStop.isActivated()) {
 			startStop.setChecked(true);
 			togglePlay();
+		}
+		if (wave != null && startStop.isActivated()) {
+			CountdownHelper.getInstance().startCountdown(wave, endTimeMillis, this);
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if (CountdownHelper.getInstance().hasCountdownEnded()) {
+			CountdownHelper.getInstance().stopFromAlarm();
+			if (wave != null) {
+				wave.stop();
+			}
+			startStop.setActivated(false);
+			startStop.setChecked(false);
+		} else if (startStop.isActivated() && wave != null && !wave.getIsPlaying()) {
+			// Playback was stopped by alarm while in background
+			CountdownHelper.getInstance().cancelCountdown(this);
+			startStop.setActivated(false);
+			startStop.setChecked(false);
 		}
 	}
 
 	@Override
 	protected void onDestroy() {
+		CountdownHelper.getInstance().cancelCountdown(this);
+		if (wave != null) {
+			wave.release();
+			wave = null;
+		}
 		super.onDestroy();
 	}
 
