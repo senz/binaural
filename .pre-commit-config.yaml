@@ -1,6 +1,6 @@
 # Pre-commit hooks for BinauralBeatsExample (Android/Kotlin)
-# Install: pip install pre-commit && pre-commit install
-# Run manually: pre-commit run --all-files
+# Install: pip install pre-commit && pre-commit install && pre-commit install --hook-type pre-push
+# Run manually: pre-commit run --all-files  (commit); pre-commit run --hook-stage pre-push --all-files (push)
 
 default_language_version:
   python: python3
@@ -38,3 +38,13 @@ repos:
         language: system
         types: [kotlin]
         pass_filenames: false
+
+  # Тесты при push (pre-push hook)
+  - repo: local
+    hooks:
+      - id: android-unit-tests
+        name: Android unit tests
+        entry: ./gradlew test --no-daemon -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

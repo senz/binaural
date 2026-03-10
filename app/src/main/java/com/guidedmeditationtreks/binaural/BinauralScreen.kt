@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -201,12 +202,11 @@ fun BinauralScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             BinauralTimerSection(
-                timerMinutes = timerMinutes,
+                state = TimerSectionState(timerMinutes, timerDropdownExpanded, isPlaying),
                 onTimerMinutesChange = {
                     timerMinutes = it
                     isDataChanged = true
                 },
-                timerDropdownExpanded = timerDropdownExpanded,
                 onTimerDropdownExpandedChange = { timerDropdownExpanded = it },
                 textFieldColors = textFieldColors,
             )
@@ -278,6 +278,7 @@ fun BinauralScreen(
                 IconButton(
                     onClick = {
                         focusManager.clearFocus()
+                        timerDropdownExpanded = false
                         if (isPlaying) {
                             onStopRequested()
                         } else {
@@ -355,11 +356,16 @@ fun BinauralScreen(
     }
 }
 
+private data class TimerSectionState(
+    val timerMinutes: Int?,
+    val timerDropdownExpanded: Boolean,
+    val isPlaying: Boolean,
+)
+
 @Composable
 private fun BinauralTimerSection(
-    timerMinutes: Int?,
+    state: TimerSectionState,
     onTimerMinutesChange: (Int?) -> Unit,
-    timerDropdownExpanded: Boolean,
     onTimerDropdownExpandedChange: (Boolean) -> Unit,
     textFieldColors: TextFieldColors,
 ) {
@@ -377,9 +383,14 @@ private fun BinauralTimerSection(
             else -> timerNo
         }
     val timerOptions = listOf<Int?>(null, 5, 10, 15)
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .alpha(if (state.isPlaying) 0.5f else 1f),
+    ) {
         OutlinedTextField(
-            value = timerLabel(timerMinutes),
+            value = timerLabel(state.timerMinutes),
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.timer_label)) },
@@ -390,14 +401,16 @@ private fun BinauralTimerSection(
                     .widthIn(min = 120.dp),
             colors = textFieldColors,
         )
+        // Overlay to open dropdown on tap; disabled while playing
         Box(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .clickable { onTimerDropdownExpandedChange(true) },
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .clickable(enabled = !state.isPlaying) { onTimerDropdownExpandedChange(true) },
         )
         DropdownMenu(
-            expanded = timerDropdownExpanded,
+            expanded = state.timerDropdownExpanded && !state.isPlaying,
             onDismissRequest = { onTimerDropdownExpandedChange(false) },
         ) {
             timerOptions.forEach { min ->
