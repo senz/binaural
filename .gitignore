@@ -29,3 +29,4 @@ log.txt
 *.tmp
 *.temp
 .cache/
+.kotlin/
