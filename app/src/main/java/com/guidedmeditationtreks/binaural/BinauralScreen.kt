@@ -235,9 +235,14 @@ fun BinauralScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .widthIn(min = 120.dp)
-                            .clickable { timerDropdownExpanded = true },
+                            .widthIn(min = 120.dp),
                     colors = textFieldColors,
+                )
+                // Invisible overlay so clicks open dropdown (TextField would consume them otherwise)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { timerDropdownExpanded = true },
                 )
                 DropdownMenu(
                     expanded = timerDropdownExpanded,
