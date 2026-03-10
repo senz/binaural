@@ -19,8 +19,8 @@ public final class CountdownHelper {
     private volatile BeatsEngine wave;
     private volatile long endTimeMillis;
     private volatile boolean countdownActive;
-    private PendingIntent alarmPendingIntent;
-    private Context appContext;
+    private volatile PendingIntent alarmPendingIntent;
+    private volatile Context appContext;
 
     public static CountdownHelper getInstance() {
         if (instance == null) {

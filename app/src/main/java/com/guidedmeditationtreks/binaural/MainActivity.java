@@ -165,10 +165,15 @@ public class MainActivity extends Activity {
 		startStop.setActivated(!startStop.isActivated());
 
 		if (startStop.isActivated()) {
-			if (isDataChanged) {
+			if (isDataChanged || wave == null) {
 				refresh();
 			}
-			attemptStartWave();
+			if (wave != null) {
+				attemptStartWave();
+			} else {
+				startStop.setActivated(false);
+				startStop.setChecked(false);
+			}
 		} else {
 			CountdownHelper.getInstance().cancelCountdown(this);
 			if (wave != null) {
@@ -179,8 +184,14 @@ public class MainActivity extends Activity {
 
 	//if user goes too fast
 	private void attemptStartWave() {
-		if (!wave.getIsPlaying()) {
-			wave.start();
+		BeatsEngine currentWave = wave;
+		if (currentWave == null) {
+			startStop.setActivated(false);
+			startStop.setChecked(false);
+			return;
+		}
+		if (!currentWave.getIsPlaying()) {
+			currentWave.start();
 			startStop.setActivated(true);
 			startStop.setChecked(true);
 		} else {
@@ -233,6 +244,10 @@ public class MainActivity extends Activity {
 	//Refresh the tones
 	private void refresh() {
 		float carrierFrequency, beatFrequency;
+		// Changing the waveform invalidates any existing countdown; ensure alarm will not
+		// try to stop a released wave instance.
+		CountdownHelper.getInstance().cancelCountdown(this);
+
 		int selectedId = radioBeatGroup.getCheckedRadioButtonId();
 		RadioButton selectedButton = (RadioButton) findViewById(selectedId);
 		carrierFrequency = Float.parseFloat(frequencyCarrierInput.getText().toString());
