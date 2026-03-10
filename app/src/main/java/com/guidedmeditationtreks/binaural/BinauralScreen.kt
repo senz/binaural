@@ -1,7 +1,5 @@
 package com.guidedmeditationtreks.binaural
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -29,25 +26,23 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 @Composable
 fun BinauralScreen(
@@ -57,7 +52,6 @@ fun BinauralScreen(
     onStopRequested: () -> Unit,
     onRefreshAndRestart: (carrierHz: Float, beatHz: Float, isBinaural: Boolean, timerMinutes: Int?) -> Unit,
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val labelColor = Color(0xFFE8E8E8)
     val errorTextColor = Color(0xFFFF8A80) // readable on dark background
@@ -171,27 +165,6 @@ fun BinauralScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
-            val url = stringResource(R.string.url)
-            val titleText = stringResource(R.string.gmt)
-            val annotated =
-                buildAnnotatedString {
-                    append(titleText)
-                    addStyle(
-                        style = SpanStyle(color = MaterialTheme.colorScheme.primary),
-                        start = 0,
-                        end = titleText.length,
-                    )
-                }
-            ClickableText(
-                text = annotated,
-                style = MaterialTheme.typography.headlineSmall,
-                onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -227,82 +200,23 @@ fun BinauralScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val timerNo = stringResource(R.string.timer_no)
-            val timer5 = stringResource(R.string.timer_5)
-            val timer10 = stringResource(R.string.timer_10)
-            val timer15 = stringResource(R.string.timer_15)
+            BinauralTimerSection(
+                timerMinutes = timerMinutes,
+                onTimerMinutesChange = {
+                    timerMinutes = it
+                    isDataChanged = true
+                },
+                timerDropdownExpanded = timerDropdownExpanded,
+                onTimerDropdownExpandedChange = { timerDropdownExpanded = it },
+                textFieldColors = textFieldColors,
+            )
 
-            fun timerLabel(m: Int?) =
-                when (m) {
-                    null -> timerNo
-                    5 -> timer5
-                    10 -> timer10
-                    15 -> timer15
-                    else -> timerNo
-                }
-            val timerOptions = listOf<Int?>(null, 5, 10, 15)
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = timerLabel(timerMinutes),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.timer_label)) },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .widthIn(min = 120.dp),
-                    colors = textFieldColors,
-                )
-                // Invisible overlay so clicks open dropdown (TextField would consume them otherwise)
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clickable { timerDropdownExpanded = true },
-                )
-                DropdownMenu(
-                    expanded = timerDropdownExpanded,
-                    onDismissRequest = { timerDropdownExpanded = false },
-                ) {
-                    timerOptions.forEach { min ->
-                        DropdownMenuItem(
-                            text = { Text(timerLabel(min)) },
-                            onClick = {
-                                timerMinutes = min
-                                timerDropdownExpanded = false
-                                isDataChanged = true
-                            },
-                        )
-                    }
-                }
-            }
-
-            // Status / remaining time
-            val statusText =
-                when {
-                    timerEndTimeMillis > 0L && isPlaying && remainingSeconds > 0 -> {
-                        val min = (remainingSeconds / 60).toInt()
-                        val sec = (remainingSeconds % 60).toInt()
-                        stringResource(R.string.status_remaining, min, sec)
-                    }
-                    isPlaying -> stringResource(R.string.status_playing)
-                    else -> stringResource(R.string.status_stopped)
-                }
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.status_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFB0B0B0),
-                )
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = labelColor,
-                )
-            }
+            BinauralStatusSection(
+                remainingSeconds = remainingSeconds,
+                isPlaying = isPlaying,
+                timerEndTimeMillis = timerEndTimeMillis,
+                labelColor = labelColor,
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -437,6 +351,98 @@ fun BinauralScreen(
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp, vertical = 20.dp)
                     .padding(bottom = 32.dp),
+        )
+    }
+}
+
+@Composable
+private fun BinauralTimerSection(
+    timerMinutes: Int?,
+    onTimerMinutesChange: (Int?) -> Unit,
+    timerDropdownExpanded: Boolean,
+    onTimerDropdownExpandedChange: (Boolean) -> Unit,
+    textFieldColors: TextFieldColors,
+) {
+    val timerNo = stringResource(R.string.timer_no)
+    val timer5 = stringResource(R.string.timer_5)
+    val timer10 = stringResource(R.string.timer_10)
+    val timer15 = stringResource(R.string.timer_15)
+
+    fun timerLabel(m: Int?) =
+        when (m) {
+            null -> timerNo
+            5 -> timer5
+            10 -> timer10
+            15 -> timer15
+            else -> timerNo
+        }
+    val timerOptions = listOf<Int?>(null, 5, 10, 15)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = timerLabel(timerMinutes),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.timer_label)) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(min = 120.dp),
+            colors = textFieldColors,
+        )
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clickable { onTimerDropdownExpandedChange(true) },
+        )
+        DropdownMenu(
+            expanded = timerDropdownExpanded,
+            onDismissRequest = { onTimerDropdownExpandedChange(false) },
+        ) {
+            timerOptions.forEach { min ->
+                DropdownMenuItem(
+                    text = { Text(timerLabel(min)) },
+                    onClick = {
+                        onTimerMinutesChange(min)
+                        onTimerDropdownExpandedChange(false)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BinauralStatusSection(
+    remainingSeconds: Long,
+    isPlaying: Boolean,
+    timerEndTimeMillis: Long,
+    labelColor: Color,
+) {
+    val statusText =
+        when {
+            timerEndTimeMillis > 0L && isPlaying && remainingSeconds > 0 -> {
+                val min = (remainingSeconds / 60).toInt()
+                val sec = (remainingSeconds % 60).toInt()
+                stringResource(R.string.status_remaining, min, sec)
+            }
+            isPlaying -> stringResource(R.string.status_playing)
+            else -> stringResource(R.string.status_stopped)
+        }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.status_label),
+            style = MaterialTheme.typography.labelMedium,
+            color = Color(0xFFB0B0B0),
+        )
+        Text(
+            text = statusText,
+            style = MaterialTheme.typography.titleMedium,
+            color = labelColor,
         )
     }
 }

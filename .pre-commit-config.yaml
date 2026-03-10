@@ -31,8 +31,10 @@ repos:
         entry: ./gradlew ktlintCheck
         language: system
         types: [kotlin]
+        pass_filenames: false
       - id: detekt
         name: detekt (Kotlin static analysis)
         entry: ./gradlew detekt
         language: system
         types: [kotlin]
+        pass_filenames: false
