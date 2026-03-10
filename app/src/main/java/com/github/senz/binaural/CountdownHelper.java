@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural;
+package com.github.senz.binaural;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -12,7 +12,7 @@ import android.os.Build;
  */
 public final class CountdownHelper {
 
-    private static final String ACTION_COUNTDOWN_END = "com.guidedmeditationtreks.binaural.COUNTDOWN_END";
+    private static final String ACTION_COUNTDOWN_END = "com.github.senz.binaural.COUNTDOWN_END";
     private static final int REQUEST_CODE_ALARM = 1;
 
     private static volatile CountdownHelper instance;

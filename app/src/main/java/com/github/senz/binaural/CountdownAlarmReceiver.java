@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural;
+package com.github.senz.binaural;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

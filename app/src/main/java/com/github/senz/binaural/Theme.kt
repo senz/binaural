@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural
+package com.github.senz.binaural
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

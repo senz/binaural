@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural
+package com.github.senz.binaural
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

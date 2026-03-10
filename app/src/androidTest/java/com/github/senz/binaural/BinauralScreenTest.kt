@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural
+package com.github.senz.binaural
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription

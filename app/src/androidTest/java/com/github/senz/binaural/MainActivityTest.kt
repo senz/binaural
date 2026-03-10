@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural
+package com.github.senz.binaural
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,7 +21,7 @@ class MainActivityTest {
     fun appContext_hasCorrectPackage() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertNotNull(appContext)
-        assertEquals("com.guidedmeditationtreks.binaural", appContext.packageName)
+        assertEquals("com.github.senz.binaural", appContext.packageName)
     }
 
     @Test

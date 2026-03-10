@@ -1,4 +1,4 @@
-package com.guidedmeditationtreks.binaural;
+package com.github.senz.binaural;
 
 /**
  * Created by mrrussell on 2/13/16.
