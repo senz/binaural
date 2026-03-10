@@ -38,6 +38,13 @@ RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDRO
 # Accept remaining licenses (non-interactive)
 RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses || true
 
+# Upgrade to Android SDK Command-line Tools 17+ so SDK XML version 4 is supported
+# (avoids "only understands SDK XML versions up to 3" when using Gradle / newer SDK repos)
+RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_HOME} "cmdline-tools;latest" \
+    && cd ${ANDROID_HOME}/cmdline-tools \
+    && NEWVER=$(ls -d [0-9]* 2>/dev/null | sort -V | tail -1) \
+    && if [ -n "$$NEWVER" ] && [ -d "$$NEWVER" ] && [ "$$NEWVER" != "latest" ]; then rm -rf latest && mv "$$NEWVER" latest; fi
+
 # PATH for sdkmanager, adb, etc.
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 
