@@ -4,6 +4,12 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
+def getGitSha() {
+    def p = 'git rev-parse --short HEAD'.execute()
+    p.waitFor()
+    return p.exitValue() == 0 ? p.text.trim() : "unknown"
+}
+
 android {
     namespace = 'com.guidedmeditationtreks.binaural'
     compileSdk = 36
@@ -12,6 +18,8 @@ android {
         applicationId = "com.guidedmeditationtreks.binaural"
         minSdk = 21
         targetSdk = 36
+        buildConfigField "String", "BUILD_TIME", "\"${new Date().format("yyyy-MM-dd HH:mm")}\""
+        buildConfigField "String", "GIT_SHA", "\"${getGitSha()}\""
     }
 
     buildTypes {
@@ -22,6 +30,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
