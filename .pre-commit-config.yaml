@@ -5,6 +5,8 @@
 default_language_version:
   python: python3
 
+exclude: '^.*\.svg$'
+
 repos:
   # Generic file fixes
   - repo: https://github.com/pre-commit/pre-commit-hooks

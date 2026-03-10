@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fallback for API &lt; 26: same dark background + icon, no adaptive mask -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#081907" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_binaural"/>
+</layer-list>
