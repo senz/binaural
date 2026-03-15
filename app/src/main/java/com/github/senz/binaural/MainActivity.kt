@@ -28,6 +28,15 @@ class MainActivity : ComponentActivity() {
     private var isPlaying by mutableStateOf(false)
     private var timerEndTimeMillis by mutableLongStateOf(0L)
     private var showNotificationPrompt by mutableStateOf(false)
+    private var showHighVolumeWarning by mutableStateOf(false)
+    private var pendingPlayback: PendingPlayback? = null
+
+    private data class PendingPlayback(
+        val carrier: Float,
+        val beat: Float,
+        val isBinaural: Boolean,
+        val timerMinutes: Int?,
+    )
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -72,7 +81,11 @@ class MainActivity : ComponentActivity() {
                         isPlaying = isPlaying,
                         timerEndTimeMillis = timerEndTimeMillis,
                         onPlayRequested = { carrier, beat, isBinaural, timerMinutes ->
-                            startPlayback(carrier, beat, isBinaural, timerMinutes)
+                            if (isPlaying) {
+                                startPlayback(carrier, beat, isBinaural, timerMinutes)
+                            } else {
+                                requestPlayback(carrier, beat, isBinaural, timerMinutes)
+                            }
                         },
                         onStopRequested = { stopPlayback() },
                         onRefreshAndRestart = { carrier, beat, isBinaural, timerMinutes ->
@@ -102,6 +115,21 @@ class MainActivity : ComponentActivity() {
                             onSkip = {
                                 markNotificationPromptSeen()
                                 showNotificationPrompt = false
+                            },
+                        )
+                    }
+                    if (showHighVolumeWarning) {
+                        HighVolumeWarningDialog(
+                            onConfirm = {
+                                pendingPlayback?.let { p ->
+                                    startPlayback(p.carrier, p.beat, p.isBinaural, p.timerMinutes)
+                                }
+                                pendingPlayback = null
+                                showHighVolumeWarning = false
+                            },
+                            onDismiss = {
+                                pendingPlayback = null
+                                showHighVolumeWarning = false
                             },
                         )
                     }
@@ -150,6 +178,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    private fun requestPlayback(
+        carrier: Float,
+        beat: Float,
+        isBinaural: Boolean,
+        timerMinutes: Int?,
+    ) {
+        if (VolumeCheck.getMusicVolumePercent(this) > VolumeCheck.WARNING_THRESHOLD_PERCENT) {
+            pendingPlayback = PendingPlayback(carrier, beat, isBinaural, timerMinutes)
+            showHighVolumeWarning = true
+        } else {
+            startPlayback(carrier, beat, isBinaural, timerMinutes)
+        }
     }
 
     private fun startPlayback(
