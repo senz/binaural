@@ -1,6 +1,8 @@
 package com.github.senz.binaural
 
-import androidx.test.ext.junit.rules.ActivityScenarioRule
+import android.content.Intent
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -15,7 +17,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
     @get:Rule
-    val scenarioRule = ActivityScenarioRule(MainActivity::class.java)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
     fun appContext_hasCorrectPackage() {
@@ -26,8 +28,32 @@ class MainActivityTest {
 
     @Test
     fun mainActivity_launches() {
-        scenarioRule.scenario.onActivity { activity ->
-            assertNotNull(activity)
+        composeTestRule.waitForIdle()
+        assertNotNull(composeTestRule.activity)
+    }
+
+    @Test
+    fun startPlayback_viaService_uiShowsPlaying() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val playingText = context.getString(R.string.status_playing)
+        composeTestRule.runOnUiThread {
+            composeTestRule.activity.startService(
+                Intent(composeTestRule.activity, PlaybackService::class.java).apply {
+                    action = PlaybackService.ACTION_PLAY
+                    putExtra(PlaybackService.EXTRA_CARRIER, 200f)
+                    putExtra(PlaybackService.EXTRA_BEAT, 10f)
+                    putExtra(PlaybackService.EXTRA_IS_BINAURAL, true)
+                    putExtra(PlaybackService.EXTRA_TIMER_MINUTES, 0)
+                },
+            )
+        }
+        Thread.sleep(1200)
+        composeTestRule.onNodeWithText(playingText).assertExists()
+        composeTestRule.runOnUiThread {
+            composeTestRule.activity.startService(
+                Intent(composeTestRule.activity, PlaybackService::class.java)
+                    .setAction(PlaybackService.ACTION_STOP),
+            )
         }
     }
 }

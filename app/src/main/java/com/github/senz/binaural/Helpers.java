@@ -49,6 +49,20 @@ public class Helpers {
         }
     }
 
+    /**
+     * Converts remaining seconds to minutes and seconds for display (e.g. notification, status).
+     * @param remainingSeconds total remaining seconds (clamped to >= 0)
+     * @return int[2] with { minutes, seconds }
+     */
+    public static int[] getRemainingMinutesSeconds(long remainingSeconds) {
+        if (remainingSeconds <= 0) {
+            return new int[] { 0, 0 };
+        }
+        long sec = remainingSeconds % 60;
+        long min = remainingSeconds / 60;
+        return new int[] { (int) min, (int) sec };
+    }
+
     public static void napThread() {
         try {
             Thread.currentThread();
