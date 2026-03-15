@@ -97,6 +97,7 @@ public final class CountdownHelper {
 
     /**
      * Called from CountdownAlarmReceiver when the alarm fires. Stops playback and clears state.
+     * Notifies PlaybackService to stop foreground and finish.
      */
     public void stopFromAlarm() {
         BeatsEngine w = wave;
@@ -112,6 +113,11 @@ public final class CountdownHelper {
                 w.stop();
             } catch (Exception ignored) {
             }
+        }
+        if (appContext != null) {
+            Intent stopIntent = new Intent(appContext, PlaybackService.class);
+            stopIntent.setAction(PlaybackService.ACTION_STOP);
+            appContext.startService(stopIntent);
         }
     }
 

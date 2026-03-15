@@ -20,6 +20,17 @@
     <string name="status_stopped">Stopped</string>
     <string name="status_remaining">Remaining: %1$d:%2$02d</string>
 
+    <string name="notification_channel_name">Playback</string>
+    <string name="notification_playing_title">Binaural Beats</string>
+    <string name="notification_playing">Playing</string>
+    <string name="notification_stop">Stop</string>
+    <string name="attribution_playback_label">Audio playback</string>
+
+    <string name="notification_prompt_title">Notifications</string>
+    <string name="notification_prompt_message">You can allow notifications to see playback status and remaining time in the status bar, and stop playback from there. This is optional.</string>
+    <string name="notification_prompt_enable">Enable</string>
+    <string name="notification_prompt_skip">Not now</string>
+
     <string name="presets_label">Presets</string>
     <string name="preset_focus">Focus</string>
     <string name="preset_euphoria">Euphoria</string>

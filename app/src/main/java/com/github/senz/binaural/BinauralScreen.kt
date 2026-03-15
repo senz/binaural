@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -601,4 +602,26 @@ private fun BinauralStatusSection(
             color = labelColor,
         )
     }
+}
+
+@Composable
+fun NotificationPermissionDialog(
+    onEnable: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onSkip,
+        title = { Text(stringResource(R.string.notification_prompt_title)) },
+        text = { Text(stringResource(R.string.notification_prompt_message)) },
+        confirmButton = {
+            OutlinedButton(onClick = onEnable) {
+                Text(stringResource(R.string.notification_prompt_enable))
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onSkip) {
+                Text(stringResource(R.string.notification_prompt_skip))
+            }
+        },
+    )
 }
