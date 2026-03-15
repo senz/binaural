@@ -25,6 +25,8 @@
     <string name="notification_playing">Playing</string>
     <string name="notification_stop">Stop</string>
     <string name="attribution_playback_label">Audio playback</string>
+    <!-- Empty tag for system/AppOps when no explicit attribution is used (avoids log errors on API 34+). -->
+    <string name="attribution_empty_tag"></string>
 
     <string name="notification_prompt_title">Notifications</string>
     <string name="notification_prompt_message">You can allow notifications to see playback status and remaining time in the status bar, and stop playback from there. This is optional.</string>

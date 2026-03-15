@@ -6,13 +6,16 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 
 class PlaybackService : Service() {
     private var wave: BeatsEngine? = null
@@ -36,7 +39,7 @@ class PlaybackService : Service() {
     }
 
     private fun handlePlay(intent: Intent) {
-        CountdownHelper.getInstance().cancelCountdown(this)
+        CountdownHelper.cancelCountdown(this)
         wave?.release()
         wave = null
 
@@ -45,7 +48,7 @@ class PlaybackService : Service() {
         val isBinaural = intent.getBooleanExtra(EXTRA_IS_BINAURAL, true)
         val timerMinutes = intent.getIntExtra(EXTRA_TIMER_MINUTES, 0).takeIf { it > 0 }
 
-        wave = if (isBinaural) Binaural(carrier, beat) else Isochronic(carrier, beat)
+        wave = if (isBinaural) Binaural(carrier, beat, null) else Isochronic(carrier, beat, null)
         wave?.start() ?: return
 
         endTimeMillis =
@@ -55,17 +58,32 @@ class PlaybackService : Service() {
                 0L
             }
 
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            stopPlaybackAndNotify()
+            return
+        }
+
         createNotificationChannel()
         val notification = buildNotification(endTimeMillis)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "startForeground failed (missing permission?)", e)
+            stopPlaybackAndNotify()
+            return
         }
 
         if (timerMinutes != null && endTimeMillis > 0) {
-            CountdownHelper.getInstance().startCountdown(wave!!, endTimeMillis, this)
-            scheduleNotificationUpdates()
+            CountdownHelper.startCountdown(wave!!, endTimeMillis, this)
+            scheduleNotificationUpdates(endTimeMillis)
         }
 
         sendBroadcast(
@@ -76,18 +94,18 @@ class PlaybackService : Service() {
         )
     }
 
-    private fun scheduleNotificationUpdates() {
+    private fun scheduleNotificationUpdates(endTime: Long) {
         updateRunnable?.let { handler.removeCallbacks(it) }
         val runnable =
             object : Runnable {
                 override fun run() {
-                    if (endTimeMillis <= 0) return
+                    if (endTime <= 0) return
                     val now = System.currentTimeMillis()
-                    if (now >= endTimeMillis) {
+                    if (now >= endTime) {
                         updateRunnable = null
                         return
                     }
-                    val notification = buildNotification(endTimeMillis)
+                    val notification = buildNotification(endTime)
                     (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
                         .notify(NOTIFICATION_ID, notification)
                     handler.postDelayed(this, 1000L)
@@ -97,10 +115,26 @@ class PlaybackService : Service() {
         handler.postDelayed(runnable, 1000L)
     }
 
+    /**
+     * Stops playback and service when we cannot run as foreground (e.g. missing POST_NOTIFICATIONS).
+     * Does not call stopForeground() since we never called startForeground().
+     */
+    private fun stopPlaybackAndNotify() {
+        updateRunnable?.let { handler.removeCallbacks(it) }
+        updateRunnable = null
+        CountdownHelper.cancelCountdown(this)
+        wave?.stop()
+        wave?.release()
+        wave = null
+        endTimeMillis = 0L
+        stopSelf()
+        sendBroadcast(Intent(PLAYBACK_STOPPED).setPackage(packageName))
+    }
+
     private fun handleStop() {
         updateRunnable?.let { handler.removeCallbacks(it) }
         updateRunnable = null
-        CountdownHelper.getInstance().cancelCountdown(this)
+        CountdownHelper.cancelCountdown(this)
         wave?.stop()
         wave?.release()
         wave = null
@@ -157,6 +191,7 @@ class PlaybackService : Service() {
     }
 
     companion object {
+        private const val TAG = "PlaybackService"
         const val ACTION_PLAY = "com.github.senz.binaural.ACTION_PLAY"
         const val ACTION_STOP = "com.github.senz.binaural.ACTION_STOP"
         const val EXTRA_CARRIER = "com.github.senz.binaural.EXTRA_CARRIER"

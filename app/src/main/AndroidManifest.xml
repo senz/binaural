@@ -11,6 +11,10 @@
     <attribution
         android:tag="playback"
         android:label="@string/attribution_playback_label" />
+    <!-- Empty tag: system may request attribution with empty string (e.g. legacy code paths). -->
+    <attribution
+        android:tag="@string/attribution_empty_tag"
+        android:label="@string/attribution_playback_label" />
 
     <application
         android:allowBackup="true"
