@@ -57,7 +57,7 @@ class BinauralTest {
     @Test
     fun generateSamples_spotValuesRegression() {
         val samples = Binaural.generateSamples(frequency, isoBeat, sampleRate)
-        // Captured from current implementation; change would indicate algorithm regression
+        // Captured from LCM*2 phase-reset implementation; change would indicate algorithm regression
         val s2 = samples[2].toInt()
         val s3 = samples[3].toInt()
         val mid = samples.size / 2

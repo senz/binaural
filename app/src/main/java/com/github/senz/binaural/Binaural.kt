@@ -97,7 +97,7 @@ class Binaural(
                     mAudio.flush()
                     mAudio.release()
                 }
-                listener?.onStopped(this)
+                listener?.onStopped(this@Binaural)
             }
         pendingStop = runnable
         handler.postDelayed(runnable, VOLUME_RAMP_MS)

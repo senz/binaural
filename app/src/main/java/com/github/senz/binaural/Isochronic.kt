@@ -29,9 +29,12 @@ class Isochronic(
     override val isPlaying: Boolean get() = _isPlaying
 
     init {
-        val samples = Companion.generateSamples(frequency, isoBeat, sampleRate)
-        sampleCount = samples.size
-        val buffSize = sampleCount * 2
+        val periodSamples = Companion.generateSamples(frequency, isoBeat, sampleRate)
+        sampleCount = periodSamples.size
+        val minBufferSize =
+            AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        val buffSize = maxOf(sampleCount * 2, minBufferSize)
+        val writeSamples = buffSize / 2
 
         mAudio =
             AudioTrack
@@ -53,7 +56,18 @@ class Isochronic(
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build()
 
-        mAudio.write(samples, 0, sampleCount)
+        if (writeSamples <= sampleCount) {
+            mAudio.write(periodSamples, 0, writeSamples)
+        } else {
+            val buffer = ShortArray(writeSamples)
+            var offset = 0
+            while (offset < writeSamples) {
+                val toCopy = minOf(sampleCount, writeSamples - offset)
+                periodSamples.copyInto(buffer, offset, 0, toCopy)
+                offset += toCopy
+            }
+            mAudio.write(buffer, 0, writeSamples)
+        }
         mAudio.setVolume(0f)
     }
 
@@ -97,7 +111,7 @@ class Isochronic(
                     mAudio.flush()
                     mAudio.release()
                 }
-                listener?.onStopped(this)
+                listener?.onStopped(this@Isochronic)
             }
         pendingStop = runnable
         handler.postDelayed(runnable, VOLUME_RAMP_MS)

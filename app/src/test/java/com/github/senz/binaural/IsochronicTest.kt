@@ -41,4 +41,13 @@ class IsochronicTest {
         assertEquals(14, s1, "sample at index 1 (actual=$s1)")
         assertEquals(2289, midVal, "sample at midpoint (actual=$midVal)")
     }
+
+    @Test
+    fun generateSamples_highBeatProducesShortPeriod() {
+        val highBeat = 100f
+        val samples = Isochronic.generateSamples(frequency, highBeat, sampleRate)
+        val multiplier = (sampleRate / 2 / highBeat).toInt()
+        assertEquals(multiplier * 2, samples.size)
+        assertTrue(samples.size <= 500, "high isoBeat should yield short period for buffer expansion at runtime")
+    }
 }
