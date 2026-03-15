@@ -37,15 +37,19 @@ class MainActivityTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val playingText = context.getString(R.string.status_playing)
         composeTestRule.runOnUiThread {
-            composeTestRule.activity.startService(
+            val playIntent =
                 Intent(composeTestRule.activity, PlaybackService::class.java).apply {
                     action = PlaybackService.ACTION_PLAY
                     putExtra(PlaybackService.EXTRA_CARRIER, 200f)
                     putExtra(PlaybackService.EXTRA_BEAT, 10f)
                     putExtra(PlaybackService.EXTRA_IS_BINAURAL, true)
                     putExtra(PlaybackService.EXTRA_TIMER_MINUTES, 0)
-                },
-            )
+                }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                composeTestRule.activity.startForegroundService(playIntent)
+            } else {
+                composeTestRule.activity.startService(playIntent)
+            }
         }
         Thread.sleep(1200)
         composeTestRule.onNodeWithText(playingText).assertExists()

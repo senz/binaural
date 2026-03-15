@@ -24,10 +24,16 @@ repos:
       - id: mixed-line-ending
         args: ['--fix=lf']
 
-  # Kotlin: ktlint + detekt via Gradle (single source of truth)
-  # Перед первым коммитом выполните: ./gradlew ktlintFormat
+  # Kotlin: ktlint format + check, detekt via Gradle (single source of truth)
   - repo: local
     hooks:
+      - id: ktlint-format
+        name: ktlint format (Kotlin)
+        entry: |-
+          bash -c './gradlew -q ktlintFormat; changed=$(git diff --name-only -- "app/**/*.kt"); [ -z "$changed" ] || { echo "ktlintFormat modified:"; echo "$changed"; echo "Stage and commit again: git add -u && git commit"; exit 1; }'
+        language: system
+        types: [kotlin]
+        pass_filenames: false
       - id: ktlint-check
         name: ktlint (Kotlin style)
         entry: ./gradlew ktlintCheck

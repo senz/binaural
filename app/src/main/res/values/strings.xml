@@ -25,11 +25,18 @@
     <string name="notification_playing">Playing</string>
     <string name="notification_stop">Stop</string>
     <string name="attribution_playback_label">Audio playback</string>
+    <!-- Empty tag for system/AppOps when no explicit attribution is used (avoids log errors on API 34+). -->
+    <string name="attribution_empty_tag"></string>
 
     <string name="notification_prompt_title">Notifications</string>
     <string name="notification_prompt_message">You can allow notifications to see playback status and remaining time in the status bar, and stop playback from there. This is optional.</string>
     <string name="notification_prompt_enable">Enable</string>
     <string name="notification_prompt_skip">Not now</string>
+
+    <string name="volume_warning_title">High volume</string>
+    <string name="volume_warning_message">System volume is high. Listening at high volume for long periods may damage your hearing. Consider lowering the volume, or confirm to start playback anyway.</string>
+    <string name="volume_warning_continue">Continue</string>
+    <string name="volume_warning_cancel">Cancel</string>
 
     <string name="presets_label">Presets</string>
     <string name="preset_focus">Focus</string>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Android 12+ (API 31) SplashScreen API: set all splash attributes explicitly
+        so the system never resolves an unset attribute to resource ID 0 (avoids
+        "Invalid resource ID 0x00000000" in logcat).
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Holo.NoActionBar">
+        <item name="android:windowBackground">@drawable/ic_launcher_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_binaural</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+    </style>
+</resources>

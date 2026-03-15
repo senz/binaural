@@ -1,5 +1,7 @@
 package com.github.senz.binaural
 
+import android.Manifest
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,9 +14,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 
 private const val PREF_NAME = "binaural_prefs"
@@ -22,14 +26,23 @@ private const val KEY_NOTIFICATION_PROMPT_SEEN = "notification_prompt_seen"
 
 class MainActivity : ComponentActivity() {
     private var isPlaying by mutableStateOf(false)
-        private set
-    private var timerEndTimeMillis by mutableStateOf(0L)
-        private set
+    private var timerEndTimeMillis by mutableLongStateOf(0L)
     private var showNotificationPrompt by mutableStateOf(false)
+    private var showHighVolumeWarning by mutableStateOf(false)
+    private var pendingPlayback: PendingPlayback? = null
+
+    private data class PendingPlayback(
+        val carrier: Float,
+        val beat: Float,
+        val isBinaural: Boolean,
+        val timerMinutes: Int?,
+    )
 
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
-            markNotificationPromptSeen()
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                markNotificationPromptSeen()
+            }
             showNotificationPrompt = false
         }
 
@@ -55,7 +68,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        if (!getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).getBoolean(KEY_NOTIFICATION_PROMPT_SEEN, false) &&
+        if (!getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_NOTIFICATION_PROMPT_SEEN, false) &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         ) {
             showNotificationPrompt = true
@@ -67,7 +81,11 @@ class MainActivity : ComponentActivity() {
                         isPlaying = isPlaying,
                         timerEndTimeMillis = timerEndTimeMillis,
                         onPlayRequested = { carrier, beat, isBinaural, timerMinutes ->
-                            startPlayback(carrier, beat, isBinaural, timerMinutes)
+                            if (isPlaying) {
+                                startPlayback(carrier, beat, isBinaural, timerMinutes)
+                            } else {
+                                requestPlayback(carrier, beat, isBinaural, timerMinutes)
+                            }
                         },
                         onStopRequested = { stopPlayback() },
                         onRefreshAndRestart = { carrier, beat, isBinaural, timerMinutes ->
@@ -80,14 +98,14 @@ class MainActivity : ComponentActivity() {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     if (ContextCompat.checkSelfPermission(
                                             this@MainActivity,
-                                            android.Manifest.permission.POST_NOTIFICATIONS,
+                                            Manifest.permission.POST_NOTIFICATIONS,
                                         ) ==
                                         PackageManager.PERMISSION_GRANTED
                                     ) {
                                         markNotificationPromptSeen()
                                         showNotificationPrompt = false
                                     } else {
-                                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                     }
                                 } else {
                                     markNotificationPromptSeen()
@@ -100,16 +118,30 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+                    if (showHighVolumeWarning) {
+                        HighVolumeWarningDialog(
+                            onConfirm = {
+                                pendingPlayback?.let { p ->
+                                    startPlayback(p.carrier, p.beat, p.isBinaural, p.timerMinutes)
+                                }
+                                pendingPlayback = null
+                                showHighVolumeWarning = false
+                            },
+                            onDismiss = {
+                                pendingPlayback = null
+                                showHighVolumeWarning = false
+                            },
+                        )
+                    }
                 }
             }
         }
     }
 
     private fun markNotificationPromptSeen() {
-        getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_NOTIFICATION_PROMPT_SEEN, true)
-            .apply()
+        getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit {
+            putBoolean(KEY_NOTIFICATION_PROMPT_SEEN, true)
+        }
     }
 
     override fun onStart() {
@@ -122,7 +154,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(playbackReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            @Suppress("DEPRECATION")
+            @Suppress("DEPRECATION", "UnspecifiedRegisterReceiverLaunch")
             registerReceiver(playbackReceiver, filter)
         }
     }
@@ -134,8 +166,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (CountdownHelper.getInstance().hasCountdownEnded()) {
-            CountdownHelper.getInstance().stopFromAlarm()
+        if (CountdownHelper.hasCountdownEnded()) {
+            CountdownHelper.stopFromAlarm()
             isPlaying = false
             timerEndTimeMillis = 0L
         } else if (isPlaying && !isPlaybackServiceRunning()) {
@@ -146,6 +178,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    private fun requestPlayback(
+        carrier: Float,
+        beat: Float,
+        isBinaural: Boolean,
+        timerMinutes: Int?,
+    ) {
+        if (VolumeCheck.getMusicVolumePercent(this) > VolumeCheck.WARNING_THRESHOLD_PERCENT) {
+            pendingPlayback = PendingPlayback(carrier, beat, isBinaural, timerMinutes)
+            showHighVolumeWarning = true
+        } else {
+            startPlayback(carrier, beat, isBinaural, timerMinutes)
+        }
     }
 
     private fun startPlayback(
@@ -175,7 +221,7 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("DEPRECATION")
     private fun isPlaybackServiceRunning(): Boolean =
-        (getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
+        (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
             .getRunningServices(Int.MAX_VALUE)
             ?.any { it.service.className == PlaybackService::class.java.name } == true
 }

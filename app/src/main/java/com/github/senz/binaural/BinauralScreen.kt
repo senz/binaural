@@ -625,3 +625,25 @@ fun NotificationPermissionDialog(
         },
     )
 }
+
+@Composable
+fun HighVolumeWarningDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.volume_warning_title)) },
+        text = { Text(stringResource(R.string.volume_warning_message)) },
+        confirmButton = {
+            OutlinedButton(onClick = onConfirm) {
+                Text(stringResource(R.string.volume_warning_continue))
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text(stringResource(R.string.volume_warning_cancel))
+            }
+        },
+    )
+}
