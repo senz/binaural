@@ -3,8 +3,10 @@ package com.github.senz.binaural
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 class Isochronic(
     frequency: Float,
@@ -21,6 +23,8 @@ class Isochronic(
     private val handler = Handler(Looper.getMainLooper())
     private var pendingVolumeUp: Runnable? = null
     private var pendingStop: Runnable? = null
+    private var underrunPollRunnable: Runnable? = null
+    private var lastUnderrunCount: Int = 0
 
     override val isPlaying: Boolean get() = _isPlaying
 
@@ -55,6 +59,7 @@ class Isochronic(
 
     override fun release() {
         doRelease = true
+        stopUnderrunPolling()
         cancelPending()
         stop()
     }
@@ -75,9 +80,11 @@ class Isochronic(
             }
         pendingVolumeUp = runnable
         handler.postDelayed(runnable, VOLUME_RAMP_MS)
+        startUnderrunPolling()
     }
 
     override fun stop() {
+        stopUnderrunPolling()
         cancelPending()
         mAudio.setVolume(0f)
 
@@ -103,8 +110,36 @@ class Isochronic(
         pendingStop = null
     }
 
+    /** Polls getUnderrunCount() and logs to Logcat when it increases. Active only in debug builds. Overrun is not exposed by AudioTrack for MODE_STATIC. */
+    private fun startUnderrunPolling() {
+        stopUnderrunPolling()
+        if (!BuildConfig.DEBUG || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        lastUnderrunCount = mAudio.getUnderrunCount()
+        Log.d(TAG, "buffer underrun polling started (overrun not in API for static mode)")
+        underrunPollRunnable =
+            object : Runnable {
+                override fun run() {
+                    if (doRelease || !_isPlaying) return
+                    val count = mAudio.getUnderrunCount()
+                    if (count > lastUnderrunCount) {
+                        Log.w(TAG, "buffer underrun: count=$count (was $lastUnderrunCount)")
+                        lastUnderrunCount = count
+                    }
+                    underrunPollRunnable?.let { handler.postDelayed(it, UNDERRUN_POLL_MS) }
+                }
+            }
+        handler.postDelayed(underrunPollRunnable!!, UNDERRUN_POLL_MS)
+    }
+
+    private fun stopUnderrunPolling() {
+        underrunPollRunnable?.let { handler.removeCallbacks(it) }
+        underrunPollRunnable = null
+    }
+
     companion object {
+        private const val TAG = "Isochronic"
         private const val VOLUME_RAMP_MS = 50L
+        private const val UNDERRUN_POLL_MS = 1500L
         private const val FADER = 128
         private const val AMPLITUDE_INCREMENT = 256
 
