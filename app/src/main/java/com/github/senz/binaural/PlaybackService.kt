@@ -47,12 +47,15 @@ class PlaybackService : Service() {
         val beat = intent.getFloatExtra(EXTRA_BEAT, 10f)
         val isBinaural = intent.getBooleanExtra(EXTRA_IS_BINAURAL, true)
         val timerMinutes = intent.getIntExtra(EXTRA_TIMER_MINUTES, 0).takeIf { it > 0 }
+        val endTimeFromIntent = intent.getLongExtra(EXTRA_END_TIME_MILLIS, 0L)
 
         wave = if (isBinaural) Binaural(carrier, beat, null) else Isochronic(carrier, beat, null)
         wave?.start() ?: return
 
         endTimeMillis =
-            if (timerMinutes != null) {
+            if (endTimeFromIntent > 0L) {
+                endTimeFromIntent
+            } else if (timerMinutes != null) {
                 System.currentTimeMillis() + timerMinutes * 60_000L
             } else {
                 0L
@@ -81,7 +84,7 @@ class PlaybackService : Service() {
             return
         }
 
-        if (timerMinutes != null && endTimeMillis > 0) {
+        if (endTimeMillis > 0) {
             CountdownHelper.startCountdown(wave!!, endTimeMillis, this)
             scheduleNotificationUpdates(endTimeMillis)
         }
@@ -102,7 +105,9 @@ class PlaybackService : Service() {
                     if (endTime <= 0) return
                     val now = System.currentTimeMillis()
                     if (now >= endTime) {
+                        // Timer reached: stop playback even if AlarmManager is inexact/delayed.
                         updateRunnable = null
+                        handleStop()
                         return
                     }
                     val notification = buildNotification(endTime)
@@ -198,6 +203,9 @@ class PlaybackService : Service() {
         const val EXTRA_BEAT = "com.github.senz.binaural.EXTRA_BEAT"
         const val EXTRA_IS_BINAURAL = "com.github.senz.binaural.EXTRA_IS_BINAURAL"
         const val EXTRA_TIMER_MINUTES = "com.github.senz.binaural.EXTRA_TIMER_MINUTES"
+
+        /** Optional: if set, used as end time (e.g. for tests) instead of computing from timer minutes. */
+        const val EXTRA_END_TIME_MILLIS = "com.github.senz.binaural.EXTRA_END_TIME_MILLIS"
         const val PLAYBACK_STARTED = "com.github.senz.binaural.PLAYBACK_STARTED"
         const val PLAYBACK_STOPPED = "com.github.senz.binaural.PLAYBACK_STOPPED"
         const val KEY_END_TIME_MILLIS = "com.github.senz.binaural.KEY_END_TIME_MILLIS"

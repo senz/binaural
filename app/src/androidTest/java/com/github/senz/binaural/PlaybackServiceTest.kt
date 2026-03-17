@@ -77,6 +77,26 @@ class PlaybackServiceTest {
         )
     }
 
+    /**
+     * When timer reaches end time, playback must stop (and notification disappear)
+     * even without exact alarm permission. Service stops itself via scheduleNotificationUpdates.
+     */
+    @Test
+    fun timerExpiry_stopsPlaybackAndRemovesNotification() {
+        val endTimeMillis = System.currentTimeMillis() + 2500L // 2.5 s from now
+        startPlaybackWithEndTime(endTimeMillis)
+        waitForService()
+        assertTrue(
+            "Notification should be visible while timer is running",
+            hasPlaybackNotification(),
+        )
+        Thread.sleep(4000) // wait past end time; allow runnable to run
+        assertFalse(
+            "After timer expiry playback should stop and notification be removed",
+            hasPlaybackNotification(),
+        )
+    }
+
     private fun startPlayback(timerMinutes: Int) {
         val intent =
             Intent(context, PlaybackService::class.java).apply {
@@ -85,6 +105,23 @@ class PlaybackServiceTest {
                 putExtra(PlaybackService.EXTRA_BEAT, 10f)
                 putExtra(PlaybackService.EXTRA_IS_BINAURAL, true)
                 putExtra(PlaybackService.EXTRA_TIMER_MINUTES, timerMinutes)
+            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    private fun startPlaybackWithEndTime(endTimeMillis: Long) {
+        val intent =
+            Intent(context, PlaybackService::class.java).apply {
+                action = PlaybackService.ACTION_PLAY
+                putExtra(PlaybackService.EXTRA_CARRIER, 200f)
+                putExtra(PlaybackService.EXTRA_BEAT, 10f)
+                putExtra(PlaybackService.EXTRA_IS_BINAURAL, true)
+                putExtra(PlaybackService.EXTRA_TIMER_MINUTES, 0)
+                putExtra(PlaybackService.EXTRA_END_TIME_MILLIS, endTimeMillis)
             }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
