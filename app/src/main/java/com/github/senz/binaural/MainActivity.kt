@@ -13,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
+import kotlinx.coroutines.delay
 
 private const val PREF_NAME = "binaural_prefs"
 private const val KEY_NOTIFICATION_PROMPT_SEEN = "notification_prompt_seen"
@@ -77,6 +79,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             BinauralTheme {
                 Box {
+                    // UI watchdog: if the timer end is already reached but a broadcast was missed,
+                    // keep the UI consistent (avoid a "stuck Stop button" while audio is already stopped).
+                    LaunchedEffect(isPlaying, timerEndTimeMillis) {
+                        if (!isPlaying || timerEndTimeMillis <= 0L) return@LaunchedEffect
+                        while (isPlaying && timerEndTimeMillis > 0L) {
+                            if (System.currentTimeMillis() >= timerEndTimeMillis) {
+                                isPlaying = false
+                                timerEndTimeMillis = 0L
+                                break
+                            }
+                            delay(500L)
+                        }
+                    }
                     BinauralScreen(
                         isPlaying = isPlaying,
                         timerEndTimeMillis = timerEndTimeMillis,

@@ -7,7 +7,7 @@ import android.media.AudioManager
  * Helper for playback volume check. Used to show high-volume warning before starting playback.
  */
 object VolumeCheck {
-    const val WARNING_THRESHOLD_PERCENT = 25
+    const val WARNING_THRESHOLD_PERCENT = 30
 
     fun getMusicVolumePercent(context: Context): Int {
         val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
